@@ -17,11 +17,26 @@ code {
     background-position: 0% 50%;
   }
   100% {
-    background-position: 100% 50%;
+    background-position: -100% 50%;
   }
 }
 
 .animate-loading-swipe {
   background-size: 200% auto;
   animation: loading-gradient-swipe 1.5s linear infinite;
+}
+
+@keyframes rotate-in {
+  0% {
+    transform: rotate(0deg) scale(0.8);
+    opacity: 0;
+  }
+  100% {
+    transform: rotate(360deg) scale(1);
+    opacity: 1;
+  }
+}
+
+.icon-rotate-transition {
+  animation: rotate-in 0.5s ease-out forwards;
 }
