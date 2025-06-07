@@ -3,16 +3,25 @@ const multer = require('multer');
 const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
-const { exec } = require('child_process');
 
 const app = express();
 const port = process.env.PORT || 3001;
 
 app.use(cors());
 
+const uploadDir = 'uploads';
+const videosDir = 'videos';
+
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir);
+}
+if (!fs.existsSync(videosDir)) {
+  fs.mkdirSync(videosDir);
+}
+
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, 'uploads/');
+    cb(null, uploadDir + '/');
   },
   filename: (req, file, cb) => {
     cb(null, Date.now() + '-' + file.originalname);
@@ -21,14 +30,7 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage: storage });
 
-if (!fs.existsSync('uploads')) {
-  fs.mkdirSync('uploads');
-}
-if (!fs.existsSync('videos')) {
-  fs.mkdirSync('videos');
-}
-
-app.use('/videos', express.static(path.join(__dirname, 'videos')));
+app.use('/videos', express.static(path.join(__dirname, videosDir)));
 
 app.post('/convert', upload.single('image'), (req, res) => {
   if (!req.file) {
@@ -37,33 +39,28 @@ app.post('/convert', upload.single('image'), (req, res) => {
 
   const imagePath = req.file.path;
   const duration = req.body.duration || 5;
-  const outputFileName = `video-${Date.now()}.mp4`;
-  const outputPath = path.join(__dirname, 'videos', outputFileName);
-  const ffmpegCommand = `ffmpeg -loop 1 -i ${imagePath} -c:v libx264 -t ${duration} -pix_fmt yuv420p -vf "scale=640:360,setsar=1" ${outputPath}`;
 
-  console.log(`FFmpeg komutu çalıştırılıyor: ${ffmpegCommand}`);
+  console.log(`Görsel yolu: ${imagePath}, Süre: ${duration} saniye.`);
 
-  exec(ffmpegCommand, (error, stdout, stderr) => {
-    fs.unlink(imagePath, (err) => {
-      if (err) console.error('Geçici görsel silinirken hata oluştu:', err);
-    });
+  const simulatedVideoFileName = `simulated-video-${Date.now()}.mp4`;
+  const simulatedVideoUrl = `${req.protocol}://${req.get('host')}/videos/${simulatedVideoFileName}`;
 
-    if (error) {
-      console.error(`exec error: ${error}`);
-      return res.status(500).json({ message: 'Video dönüştürülürken bir hata oluştu.', error: error.message });
-    }
-    console.log(`stdout: ${stdout}`);
-    console.error(`stderr: ${stderr}`);
+  fs.unlink(imagePath, (err) => {
+    if (err) console.error('Geçici görsel silinirken hata oluştu:', err);
+  });
 
-    const videoUrl = `${req.protocol}://${req.get('host')}/videos/${outputFileName}`;
-    res.json({
-      message: 'Görsel başarıyla videoya dönüştürüldü!',
-      videoUrl: videoUrl,
-      fileName: outputFileName
-    });
+  res.json({
+    message: 'Görsel dönüştürme simüle edildi. Gerçek video Render\'da oluşacaktır.',
+    videoUrl: simulatedVideoUrl
   });
 });
 
+app.use(express.static(path.join(__dirname, 'build')));
+
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'build', 'index.html'));
+});
+
 app.listen(port, () => {
-  console.log(`Server ${port} portunda çalışıyor`);
+  console.log(`Node.js sunucusu ${port} portunda çalışıyor (Simülasyon Modu).`);
 });
