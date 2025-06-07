@@ -43,25 +43,21 @@ app.post('/convert', upload.single('image'), (req, res) => {
   const outputFileName = `video-${Date.now()}.mp4`;
   const outputPath = path.join(__dirname, videosDir, outputFileName);
 
-  // FFmpeg komutunu güncelliyoruz:
-  // -vf "pad=ceil(iw/2)*2:ceil(ih/2)*2" : Genişlik ve yüksekliği en yakın çift sayıya yuvarlar (eğer tek ise)
-  // -r 25 : Video kare hızını 25 FPS olarak sabitler. Bu da encoder hatalarını azaltabilir.
   const ffmpegCommand = `ffmpeg -loop 1 -i ${imagePath} -c:v libx264 -t ${duration} -pix_fmt yuv420p -vf "pad=ceil(iw/2)*2:ceil(ih/2)*2" -r 25 ${outputPath}`;
 
   console.log(`FFmpeg komutu çalıştırılıyor: ${ffmpegCommand}`);
 
-  exec(ffmpegCommand, (error, stdout, stderr) => {
+  exec(ffmpegCommand, { maxBuffer: 1024 * 1024 * 10 }, (error, stdout, stderr) => {
     fs.unlink(imagePath, (err) => {
       if (err) console.error('Geçici görsel silinirken hata oluştu:', err);
     });
 
     if (error) {
       console.error(`exec error: ${error.message}`);
-      // FFmpeg'den gelen stderr çıktısını hata mesajına dahil ediyoruz
       return res.status(500).json({
         message: 'Video dönüştürülürken bir hata oluştu.',
         error: error.message,
-        details: stderr // FFmpeg'in detaylı hata çıktısı
+        details: stderr
       });
     }
     console.log(`stdout: ${stdout}`);
