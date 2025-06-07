@@ -43,7 +43,7 @@ app.post('/convert', upload.single('image'), (req, res) => {
   const outputFileName = `video-${Date.now()}.mp4`;
   const outputPath = path.join(__dirname, videosDir, outputFileName);
 
-  const ffmpegCommand = `ffmpeg -loop 1 -i ${imagePath} -c:v libx264 -t ${duration} -pix_fmt yuv420p -vf "scale=640:360,setsar=1" ${outputPath}`;
+  const ffmpegCommand = `ffmpeg -loop 1 -i ${imagePath} -c:v libx264 -t ${duration} -pix_fmt yuv420p ${outputPath}`;
 
   console.log(`FFmpeg komutu çalıştırılıyor: ${ffmpegCommand}`);
 
