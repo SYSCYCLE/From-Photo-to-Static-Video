@@ -43,11 +43,10 @@ app.post('/convert', upload.single('image'), (req, res) => {
   const outputFileName = `video-${Date.now()}.mp4`;
   const outputPath = path.join(__dirname, videosDir, outputFileName);
 
-  const ffmpegCommand = `ffmpeg -loop 1 -i ${imagePath} -c:v libx264 -t ${duration} -pix_fmt yuv420p -vf "pad=ceil(iw/2)*2:ceil(ih/2)*2" -r 25 ${outputPath}`;
+  const ffmpegCommand = `ffmpeg -loop 1 -i ${imagePath} -c:v libx264 -t ${duration} -pix_fmt yuv420p -vf "scale='min(1920,iw)':-1,scale=ceil(iw/2)*2:ceil(ih/2)*2" -r 25 ${outputPath}`;
 
   console.log(`FFmpeg komutu çalıştırılıyor: ${ffmpegCommand}`);
 
-  // maxBuffer'ı 50MB'a çıkarıyoruz ve timeout ekliyoruz (120 saniye = 2 dakika)
   exec(ffmpegCommand, { maxBuffer: 1024 * 1024 * 50, timeout: 120000 }, (error, stdout, stderr) => {
     fs.unlink(imagePath, (err) => {
       if (err) console.error('Geçici görsel silinirken hata oluştu:', err);
@@ -58,9 +57,11 @@ app.post('/convert', upload.single('image'), (req, res) => {
       let errorMessage = 'Video dönüştürülürken bir hata oluştu.';
 
       if (error.killed && error.signal === 'SIGTERM') {
-        errorMessage = 'Video dönüştürme işlemi zaman aşımına uğradı. Lütfen daha küçük bir görsel deneyin veya daha kısa bir süre seçin.';
+        errorMessage = 'Video dönüştürme işlemi zaman aşımına uğradı. Görsel çok büyük olabilir veya süre çok uzun olabilir.';
       } else if (stderr.includes('maxBuffer')) {
-          errorMessage = 'Video dönüştürme çıktısı çok büyük oldu. Lütfen daha küçük bir görsel deneyin veya daha kısa bir süre seçin.';
+          errorMessage = 'Video dönüştürme çıktısı çok büyük oldu. Görsel çok büyük olabilir veya süre çok uzun olabilir.';
+      } else if (stderr.includes('Error while opening encoder')) {
+          errorMessage = 'Video encoder hatası oluştu. Görsel formatı veya boyutuyla ilgili bir sorun olabilir.';
       }
       return res.status(500).json({
         message: errorMessage,
@@ -71,7 +72,7 @@ app.post('/convert', upload.single('image'), (req, res) => {
     console.log(`stdout: ${stdout}`);
     console.error(`stderr: ${stderr}`);
 
-    const videoUrl = `${req.protocol}://${req.get('host')}/videos/${outputFileName}`;
+    const videoUrl = `https://${req.get('host')}/videos/${outputFileName}`;
     res.json({
       message: 'Görsel başarıyla videoya dönüştürüldü!',
       videoUrl: videoUrl,
