@@ -3,6 +3,7 @@ const multer = require('multer');
 const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
+const { exec } = require('child_process');
 
 const app = express();
 const port = process.env.PORT || 3001;
@@ -39,19 +40,31 @@ app.post('/convert', upload.single('image'), (req, res) => {
 
   const imagePath = req.file.path;
   const duration = req.body.duration || 5;
+  const outputFileName = `video-${Date.now()}.mp4`;
+  const outputPath = path.join(__dirname, videosDir, outputFileName);
 
-  console.log(`Görsel yolu: ${imagePath}, Süre: ${duration} saniye.`);
+  const ffmpegCommand = `ffmpeg -loop 1 -i ${imagePath} -c:v libx264 -t ${duration} -pix_fmt yuv420p -vf "scale=640:360,setsar=1" ${outputPath}`;
 
-  const simulatedVideoFileName = `simulated-video-${Date.now()}.mp4`;
-  const simulatedVideoUrl = `${req.protocol}://${req.get('host')}/videos/${simulatedVideoFileName}`;
+  console.log(`FFmpeg komutu çalıştırılıyor: ${ffmpegCommand}`);
 
-  fs.unlink(imagePath, (err) => {
-    if (err) console.error('Geçici görsel silinirken hata oluştu:', err);
-  });
+  exec(ffmpegCommand, (error, stdout, stderr) => {
+    fs.unlink(imagePath, (err) => {
+      if (err) console.error('Geçici görsel silinirken hata oluştu:', err);
+    });
 
-  res.json({
-    message: 'Görsel dönüştürme simüle edildi. Gerçek video Render\'da oluşacaktır.',
-    videoUrl: simulatedVideoUrl
+    if (error) {
+      console.error(`exec error: ${error.message}`);
+      return res.status(500).json({ message: 'Video dönüştürülürken bir hata oluştu.', error: error.message, stderr: stderr });
+    }
+    console.log(`stdout: ${stdout}`);
+    console.error(`stderr: ${stderr}`);
+
+    const videoUrl = `${req.protocol}://${req.get('host')}/videos/${outputFileName}`;
+    res.json({
+      message: 'Görsel başarıyla videoya dönüştürüldü!',
+      videoUrl: videoUrl,
+      fileName: outputFileName
+    });
   });
 });
 
@@ -62,5 +75,5 @@ app.get('*', (req, res) => {
 });
 
 app.listen(port, () => {
-  console.log(`Node.js sunucusu ${port} portunda çalışıyor (Simülasyon Modu).`);
+  console.log(`Node.js sunucusu ${port} portunda çalışıyor.`);
 });
