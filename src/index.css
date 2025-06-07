@@ -11,3 +11,17 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+
+@keyframes loading-gradient-swipe {
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: 100% 50%;
+  }
+}
+
+.animate-loading-swipe {
+  background-size: 200% auto;
+  animation: loading-gradient-swipe 1.5s linear infinite;
+}
