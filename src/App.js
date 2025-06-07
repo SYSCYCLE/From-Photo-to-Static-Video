@@ -118,9 +118,6 @@ function App() {
             >
               Tarayıcınız video etiketini desteklemiyor.
             </video>
-            <p className="mt-2 text-sm text-gray-500 text-center">
-              (Bu bir örnek videodur. Backend gerçek bir video döndürdüğünde burası değişecektir.)
-            </p>
           </div>
         )}
       </div>
