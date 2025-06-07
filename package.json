@@ -26,10 +26,9 @@
     "cors": "^2.8.5",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "react-scripts": "5.0.1"
-  },
-  "devDependencies": {
-    "concurrently": "^8.2.2"
+    "react-scripts": "5.0.1",
+    "concurrently": "^8.2.2",
+    "lucide-react": "^0.395.0"
   },
   "browserslist": {
     "production": [
