@@ -47,15 +47,23 @@ app.post('/convert', upload.single('image'), (req, res) => {
 
   console.log(`FFmpeg komutu çalıştırılıyor: ${ffmpegCommand}`);
 
-  exec(ffmpegCommand, { maxBuffer: 1024 * 1024 * 10 }, (error, stdout, stderr) => {
+  // maxBuffer'ı 50MB'a çıkarıyoruz ve timeout ekliyoruz (120 saniye = 2 dakika)
+  exec(ffmpegCommand, { maxBuffer: 1024 * 1024 * 50, timeout: 120000 }, (error, stdout, stderr) => {
     fs.unlink(imagePath, (err) => {
       if (err) console.error('Geçici görsel silinirken hata oluştu:', err);
     });
 
     if (error) {
       console.error(`exec error: ${error.message}`);
+      let errorMessage = 'Video dönüştürülürken bir hata oluştu.';
+
+      if (error.killed && error.signal === 'SIGTERM') {
+        errorMessage = 'Video dönüştürme işlemi zaman aşımına uğradı. Lütfen daha küçük bir görsel deneyin veya daha kısa bir süre seçin.';
+      } else if (stderr.includes('maxBuffer')) {
+          errorMessage = 'Video dönüştürme çıktısı çok büyük oldu. Lütfen daha küçük bir görsel deneyin veya daha kısa bir süre seçin.';
+      }
       return res.status(500).json({
-        message: 'Video dönüştürülürken bir hata oluştu.',
+        message: errorMessage,
         error: error.message,
         details: stderr
       });
