@@ -17,13 +17,13 @@ code {
     background-position: 0% 50%;
   }
   100% {
-    background-position: -100% 50%;
+    background-position: -200% 50%;
   }
 }
 
 .animate-loading-swipe {
-  background-size: 200% auto;
-  animation: loading-gradient-swipe 1.5s linear infinite;
+  background-size: 400% auto;
+  animation: loading-gradient-swipe 3s linear infinite;
 }
 
 @keyframes rotate-in {
